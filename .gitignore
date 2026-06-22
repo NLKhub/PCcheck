@@ -1,0 +1,4 @@
+results/
+*_result.json
+remote_diagnostic_pc.vbs
+*.tmp
