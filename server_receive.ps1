@@ -38,8 +38,8 @@ try {
         $resp    = $context.Response
         $now     = Get-Date -Format 'HH:mm:ss'
 
-        if ($req.HttpMethod -eq 'POST' -and $req.Url.LocalPath -eq '/result') {
-            try {
+        try {
+            if ($req.HttpMethod -eq 'POST' -and $req.Url.LocalPath -eq '/result') {
                 $reader = New-Object System.IO.StreamReader($req.InputStream, [System.Text.Encoding]::UTF8)
                 $body   = $reader.ReadToEnd()
                 $reader.Close()
@@ -61,20 +61,20 @@ try {
                 $resp.StatusCode  = 200
                 $resp.ContentType = 'application/json; charset=utf-8'
                 $resp.OutputStream.Write($respBytes, 0, $respBytes.Length)
-            } catch {
+            } else {
                 Write-Host "[$now] " -NoNewline -ForegroundColor DarkGray
-                Write-Host " ERR " -NoNewline -ForegroundColor Red
-                Write-Host " $($_.Exception.Message)"
-                $resp.StatusCode = 500
+                Write-Host " --- " -NoNewline -ForegroundColor DarkGray
+                Write-Host " $($req.HttpMethod) $($req.Url.LocalPath) from $($req.RemoteEndPoint.Address)" -ForegroundColor DarkGray
+                $resp.StatusCode = 404
             }
-        } else {
+        } catch {
             Write-Host "[$now] " -NoNewline -ForegroundColor DarkGray
-            Write-Host " --- " -NoNewline -ForegroundColor DarkGray
-            Write-Host " $($req.HttpMethod) $($req.Url.LocalPath) from $($req.RemoteEndPoint.Address)" -ForegroundColor DarkGray
-            $resp.StatusCode = 404
+            Write-Host " ERR " -NoNewline -ForegroundColor Red
+            Write-Host " $($_.Exception.Message)"
+            try { $resp.StatusCode = 500 } catch {}
+        } finally {
+            try { $resp.Close() } catch {}
         }
-
-        $resp.Close()
     }
 } catch [System.Net.HttpListenerException] {
     # normal exit on Ctrl+C
